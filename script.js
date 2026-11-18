@@ -1,199 +1,341 @@
-* {
+// CLASSE: representa um cliente do sistema.
 
-  box-sizing: border-box;
+class Cliente {
+
+  constructor(id, nome, email, cpf, telefone, cidade) {
+
+    this.id = id;
+
+    this.nome = nome;
+
+    this.email = email;
+
+    this.cpf = cpf;
+
+    this.telefone = telefone;
+
+    this.cidade = cidade;
+
+  }
+
+ 
+
+  atualizar(nome, email, telefone, cidade) {
+
+    this.nome = nome;
+
+    this.email = email;
+
+    this.telefone = telefone;
+
+    this.cidade = cidade;
+
+  }
 
 }
 
  
 
-body {
+// CLASSE: concentra as operações de gerenciamento dos clientes.
 
-  margin: 0;
+class CadastroClientes {
 
-  padding: 24px;
+  constructor() {
 
-  font-family: Arial, sans-serif;
+    this.clientes = this.carregar();
 
-  background: #f2f5f9;
+  }
 
-  color: #243247;
+ 
+
+  carregar() {
+
+    const dados = JSON.parse(localStorage.getItem("clientes")) || [];
+
+    return dados.map(item => new Cliente(
+
+      item.id, item.nome, item.email, item.telefone, item.cidade
+
+    ));
+
+  }
+
+ 
+
+  salvarNoNavegador() {
+
+    localStorage.setItem("clientes", JSON.stringify(this.clientes));
+
+  }
+
+ 
+
+  adicionar(cliente) {
+
+    this.clientes.push(cliente);
+
+    this.salvarNoNavegador();
+
+  }
+
+ 
+
+  buscarPorId(id) {
+
+    return this.clientes.find(cliente => cliente.id === id);
+
+  }
+
+ 
+
+  atualizar(id, dados) {
+
+    const cliente = this.buscarPorId(id);
+
+    if (!cliente) return false;
+
+ 
+
+    cliente.atualizar(
+
+      dados.nome, dados.email, dados.telefone, dados.cidade
+
+    );
+
+    this.salvarNoNavegador();
+
+    return true;
+
+  }
+
+ 
+
+  excluir(id) {
+
+    this.clientes = this.clientes.filter(cliente => cliente.id !== id);
+
+    this.salvarNoNavegador();
+
+  }
 
 }
 
  
 
-.container {
+const cadastro = new CadastroClientes();
 
-  max-width: 1000px;
+const formulario = document.getElementById("formCliente");
 
-  margin: 0 auto;
+const lista = document.getElementById("listaClientes");
 
-  padding: 28px;
+const pesquisa = document.getElementById("pesquisa");
 
-  background: #ffffff;
+const mensagemVazia = document.getElementById("mensagemVazia");
 
-  border-radius: 12px;
+ 
 
-  box-shadow: 0 3px 14px rgba(0, 0, 0, 0.08);
+function limparFormulario() {
+
+  formulario.reset();
+
+  document.getElementById("clienteId").value = "";
+
+  document.getElementById("btnSalvar").textContent = "Salvar cliente";
 
 }
 
  
 
-h1, h2 {
+function renderizarClientes(filtro = "") {
 
-  color: #174a78;
+  lista.innerHTML = "";
+
+  const termo = filtro.toLowerCase();
+
+ 
+
+  const clientesFiltrados = cadastro.clientes.filter(cliente =>
+
+    cliente.nome.toLowerCase().includes(termo) ||
+
+    cliente.email.toLowerCase().includes(termo)
+
+  );
+
+ 
+
+  mensagemVazia.hidden = clientesFiltrados.length > 0;
+
+ 
+
+  clientesFiltrados.forEach(cliente => {
+
+    const linha = document.createElement("tr");
+
+ 
+
+    // textContent evita inserir os dados digitados como código HTML.
+
+    [cliente.nome, cliente.email, cliente.telefone, cliente.cidade]
+
+      .forEach(valor => {
+
+        const celula = document.createElement("td");
+
+        celula.textContent = valor || "-";
+
+        linha.appendChild(celula);
+
+      });
+
+ 
+
+    const acoes = document.createElement("td");
+
+ 
+
+    const btnEditar = document.createElement("button");
+
+    btnEditar.textContent = "Editar";
+
+    btnEditar.className = "editar";
+
+    btnEditar.type = "button";
+
+    btnEditar.addEventListener("click", () => carregarParaEdicao(cliente.id));
+
+ 
+
+    const btnExcluir = document.createElement("button");
+
+    btnExcluir.textContent = "Excluir";
+
+    btnExcluir.className = "excluir";
+
+    btnExcluir.type = "button";
+
+    btnExcluir.addEventListener("click", () => {
+
+      if (confirm("Deseja realmente excluir este cliente?")) {
+
+        cadastro.excluir(cliente.id);
+
+        renderizarClientes(pesquisa.value);
+
+      }
+
+    });
+
+ 
+
+    acoes.append(btnEditar, btnExcluir);
+
+    linha.appendChild(acoes);
+
+    lista.appendChild(linha);
+
+  });
 
 }
 
  
 
-h1 { margin-top: 0; }
+function carregarParaEdicao(id) {
 
-.descricao { color: #64748b; }
+  const cliente = cadastro.buscarPorId(id);
+
+  if (!cliente) return;
 
  
 
-form {
+  document.getElementById("clienteId").value = cliente.id;
 
-  display: grid;
+  document.getElementById("nome").value = cliente.nome;
 
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  document.getElementById("email").value = cliente.email;
 
-  gap: 14px;
+  document.getElementById("telefone").value = cliente.telefone;
 
-  margin: 24px 0 32px;
+  document.getElementById("cidade").value = cliente.cidade;
+
+  document.getElementById("btnSalvar").textContent = "Atualizar cliente";
+
+  document.getElementById("nome").focus();
 
 }
 
  
 
-.campo {
+formulario.addEventListener("submit", event => {
 
-  display: flex;
-
-  flex-direction: column;
-
-  gap: 6px;
-
-}
+  event.preventDefault();
 
  
 
-label { font-weight: bold; }
+  const id = document.getElementById("clienteId").value;
+
+  const dados = {
+
+    nome: document.getElementById("nome").value.trim(),
+
+    email: document.getElementById("email").value.trim(),
+
+    telefone: document.getElementById("telefone").value.trim(),
+
+    cidade: document.getElementById("cidade").value.trim()
+
+  };
 
  
 
-input {
+  if (!dados.nome || !dados.email) {
 
-  width: 100%;
+    alert("Preencha o nome e o e-mail.");
 
-  padding: 11px;
+    return;
 
-  border: 1px solid #cbd5e1;
-
-  border-radius: 6px;
-
-  font-size: 14px;
-
-}
+  }
 
  
 
-input:focus {
+  if (id) {
 
-  outline: 2px solid #93c5fd;
+    cadastro.atualizar(id, dados);
 
-  border-color: #2563eb;
+    alert("Cliente atualizado com sucesso!");
 
-}
+  } else {
 
- 
+    const novoCliente = new Cliente(
 
-.botoes {
+      Date.now().toString(),
 
-  grid-column: 1 / -1;
+      dados.nome, dados.email, dados.telefone, dados.cidade
 
-  display: flex;
+    );
 
-  gap: 10px;
+    cadastro.adicionar(novoCliente);
 
-}
+    alert("Cliente cadastrado com sucesso!");
 
- 
-
-button {
-
-  padding: 10px 16px;
-
-  border: 0;
-
-  border-radius: 6px;
-
-  background: #1769aa;
-
-  color: white;
-
-  cursor: pointer;
-
-}
+  }
 
  
 
-button:hover { opacity: 0.88; }
+  limparFormulario();
 
-button.secundario { background: #64748b; }
+  renderizarClientes(pesquisa.value);
 
-button.editar { background: #0f766e; margin-right: 5px; }
-
-button.excluir { background: #b42318; }
+});
 
  
 
-.lista { margin-top: 10px; }
+document.getElementById("btnLimpar").addEventListener("click", limparFormulario);
 
-.lista input { margin: 8px 0 14px; }
-
- 
-
-.tabela-responsiva { overflow-x: auto; }
-
-table {
-
-  width: 100%;
-
-  border-collapse: collapse;
-
-  font-size: 14px;
-
-}
+pesquisa.addEventListener("input", () => renderizarClientes(pesquisa.value));
 
  
 
-th, td {
+// Exibe os registros que já estavam salvos no navegador.
 
-  padding: 10px;
-
-  border-bottom: 1px solid #e2e8f0;
-
-  text-align: left;
-
-}
-
- 
-
-th { background: #eaf2f8; }
-
-#mensagemVazia { color: #64748b; }
-
- 
-
-@media (max-width: 650px) {
-
-  body { padding: 10px; }
-
-  .container { padding: 18px; }
-
-  form { grid-template-columns: 1fr; }
-
-}
+renderizarClientes();
