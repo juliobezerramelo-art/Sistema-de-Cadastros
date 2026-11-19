@@ -20,9 +20,11 @@ class Cliente {
 
  
 
-  atualizar(nome, email, telefone, cidade) {
+  atualizar(nome, email, cpf, telefone, cidade) {
 
     this.nome = nome;
+
+    this.cpf = cpf;
 
     this.email = email;
 
@@ -54,7 +56,7 @@ class CadastroClientes {
 
     return dados.map(item => new Cliente(
 
-      item.id, item.nome, item.email, item.telefone, item.cidade
+      item.id, item.nome, item.email, item.cpf || " ", item.telefone, item.cidade
 
     ));
 
@@ -98,7 +100,7 @@ class CadastroClientes {
 
     cliente.atualizar(
 
-      dados.nome, dados.email, dados.telefone, dados.cidade
+      dados.nome, dados.email, dados.cpf, dados.telefone, dados.cidade
 
     );
 
